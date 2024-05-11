@@ -7,12 +7,13 @@ import { Contract } from "ethers";
 import { ethers, network } from "hardhat";
 import type { BigNumber } from "ethers";
 
-const addressWithEnoughDelegate = "0x9AA835Bc7b8cE13B9B0C9764A52FbF71AC62cCF1";
-const timelockAddress = "0xc0Da02939E1441F497fd74F78cE7Decb17B66529";
-const comptrollerAddress = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
+const addressWithEnoughDelegate = "0x9AA835Bc7b8cE13B9B0C9764A52FbF71AC62cCF1"; // a16z
+const timelockAddress = "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"; // GovernorBravoDelegator
+const comptrollerAddress = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B"; // Unitroller
 
-const grantCompTo = "0x9AA835Bc7b8cE13B9B0C9764A52FbF71AC62cCF1";
-const amount = "100000000000000000000";
+const grantCompTo = "0xc10785fB7b1adD4fD521A27d0d55c5561EEf0940"; // AG address
+const amount = ethers.utils.parseUnits('75246', 18).toString() // 75246 COMP
+// const amount = ethers.utils.parseUnits('2000000', 18).toString() // UNREAL AMOUNT OF COMP, 2M, should fail
 
 export const COMP_WHALES =  [
     "0x9aa835bc7b8ce13b9b0c9764a52fbf71ac62ccf1",
@@ -24,21 +25,6 @@ export const COMP_WHALES =  [
 ];
 
 async function main() {
-    // Deployment and verification of the `contracts/PositiveEvenSetter.sol`.
-    /*
-    struct Proposal {
-        id   uint256 :  246
-        proposer   address :  0x3FB19771947072629C8EEE7995a2eF23B72d4C8A
-        eta   uint256 :  0
-        startBlock   uint256 :  19819836
-        endBlock   uint256 :  19839546
-        forVotes   uint256 :  50000242187036818750513
-        againstVotes   uint256 :  0
-        abstainVotes   uint256 :  0
-        canceled   bool :  true
-        executed   bool :  false
-    }
-    */
     const timelock = new Contract(
         timelockAddress,
         [
@@ -61,8 +47,8 @@ async function main() {
         method: "hardhat_impersonateAccount",
         params: [addressWithEnoughDelegate],
     });
-    const signer = ethers.provider.getSigner(addressWithEnoughDelegate);
 
+    const signer = ethers.provider.getSigner(addressWithEnoughDelegate);
     const tx = await timelock.connect(signer).propose(
         [comptrollerAddress],
         [0],
@@ -70,6 +56,9 @@ async function main() {
         [_grantCompCalldata],
         "Grant COMP to delegate"
     );
+
+    console.log('Data that should be passed into etherscan', [comptrollerAddress],[0],["_grantComp(address,uint256)"],[_grantCompCalldata], "Grant COMP to delegate")
+    
     await tx.wait();
     const proposalId = await timelock.proposalCount();
     console.log("Passed proposal");
